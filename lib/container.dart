@@ -51,28 +51,22 @@ class Container {
   }
   
   Future<InstanceMirror> _resolveByName(String typeName, [List parameters]) {
-    Map<String, ClassMirror> classes = currentMirrorSystem().isolate.rootLibrary.classes;
-    if (classes.containsKey(typeName)) {
-      Completer<InstanceMirror> completer = new Completer<InstanceMirror>();
-      ClassMirror classMirror = classes[typeName];
-      MethodMirror constructor = _selectResolveableConstructor(classMirror, parameters);
-      _resolveParameters(constructor, parameters).then((params) {
-        print("Instantiate Type ${constructor.simpleName} with params $params");
-        Future<InstanceMirror> newInstance = classMirror.newInstance(constructor.constructorName, params);
-        newInstance.then((InstanceMirror newIM) {
-          //if (!completer.future.isComplete) {
-            completer.complete(newIM);
-         // }
-        }).catchError( (error) => print("exception error $error") );
-        /*newInstance.handleException( (exception) {
-          print("exception $exception"); 
-          completer.completeException(exception);});*/
-      });
-      return completer.future;
-    } else {
-      throw new ArgumentError("typeName '$typeName' not found in this isolates rootLibrary");
-    }
-    return null;
+    ClassMirror classMirror = _retrieveClassMirror(typeName);
+    Completer<InstanceMirror> completer = new Completer<InstanceMirror>();
+    MethodMirror constructor = _selectResolveableConstructor(classMirror, parameters);
+    _resolveParameters(constructor, parameters).then((params) {
+      print("Instantiate Type ${constructor.simpleName} with params $params");
+      Future<InstanceMirror> newInstance = classMirror.newInstance(constructor.constructorName, params);
+      newInstance.then((InstanceMirror newIM) {
+        //if (!completer.future.isComplete) {
+          completer.complete(newIM);
+       // }
+      }).catchError( (error) => print("exception error $error") );
+      /*newInstance.handleException( (exception) {
+        print("exception $exception"); 
+        completer.completeException(exception);});*/
+    });
+    return completer.future;
   }
 
   Future<List> _resolveParameters(MethodMirror methodMirror, List parameters) {
@@ -136,8 +130,8 @@ class Container {
               errors.add(new NotResolveableError("Can not auto-resolve Dynamic type in constructor ${methodMirror.simpleName} for parameter at position $i"));
             } else {
               try {
-                Map<String, ClassMirror> classes = currentMirrorSystem().isolate.rootLibrary.classes;
-                _selectResolveableConstructor(classes[requestedParamType]);
+                ClassMirror classMirror = _retrieveClassMirror(requestedParamType);
+                _selectResolveableConstructor(classMirror);
               } on NotResolveableError catch(error) {
                 errors.add(error);
               }  
@@ -153,6 +147,22 @@ class Container {
       throw new NotResolveableError.fromList(errors);
     }
     return resolveableConstructor;
+  }
+  
+  ClassMirror _retrieveClassMirror(String typeName) {
+    ClassMirror mirror = currentMirrorSystem().isolate.rootLibrary.classes[typeName];
+    if(mirror == null) {
+      currentMirrorSystem().libraries.values.forEach((lib) {
+        if (lib.classes.containsKey(typeName))
+        {
+          mirror = lib.classes[typeName];
+        }
+      });
+    }
+    if(mirror == null) {
+      throw new ArgumentError("typeName '$typeName' not found in any library known to this isolate");
+    }
+    return mirror;
   }
   
   bool _isSimpleType(String typeName) => (typeName == "num" 

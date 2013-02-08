@@ -1,5 +1,6 @@
 import 'package:unittest/unittest.dart';
 import '../lib/djin.dart';
+import 'test_lib.dart';
 import 'dart:async';
 import 'dart:mirrors';
 
@@ -10,11 +11,9 @@ void main() {
   test("resolveWithParametersGiven", shouldResolveIfSimpleOrDyanmicDependenciesAreGiven);
   //test("paramsInWrongOrder", shouldThrowFutureUnhandledExceptionIfParametersArePassedInTheWrongOrder);
   test("resolveConcreteDependency", shouldResolveConcreteDependency);
-  
-  test("useResolveableConstructor", shouldUseResolveableConstructor);
-
-  
+  test("useResolveableConstructor", shouldUseResolveableConstructor); 
   test("resolveByClosure", shouldResolveUsingClosure);
+  test("shouldResolveFromImportedLib", resolveFromImportedLib);
 }
 
 void shouldThrowArgumentErrorIfGivenTypeIsNotKnownInOwnIsolate() {
@@ -118,6 +117,16 @@ void shouldResolveUsingClosure() {
     });
   
   container.resolveByClosure((ClassWithDependency instance) => asyncCallbackWithDependency(instance), [dependency]);
+}
+
+void resolveFromImportedLib() {
+  Container container = new Container();
+
+  var asyncCallbackWithDependency = expectAsync1((ClassFromOtherLib instance) {
+      expect(instance, new isInstanceOf<ClassFromOtherLib>());     
+    });
+  
+  container.resolveByClosure((ClassFromOtherLib instance) => asyncCallbackWithDependency(instance));
 }
 
 class ClassWithSimpleDependency<T> {
