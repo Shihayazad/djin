@@ -50,12 +50,12 @@ void throwErrorWhenSettingInstanceForTransientLifeStyle() {
 
 class TestContainer extends Mock implements Container {
   TestContainer(List instances) {
-    Behavior behavior = when(callsTo('resolveByName', instances[0].runtimeType.toString()));
+    Behavior behavior = when(callsTo('doResolve', instances[0].runtimeType.toString()));
     instances.forEach((instance) => behavior.thenReturn(new Future.immediate(instance)));
   }
   
   TestContainer.withDependencies(dependendObject, dependency) {
-    Behavior behavior = when(callsTo('resolveByName', dependendObject.runtimeType.toString(), [dependency]));
+    Behavior behavior = when(callsTo('doResolve', dependendObject.runtimeType.toString(), [dependency]));
     behavior.thenReturn(new Future.immediate(dependendObject));
   }
 }

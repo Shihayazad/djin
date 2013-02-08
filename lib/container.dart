@@ -19,15 +19,10 @@ class Container {
   Map<String, Component> _components = new Map<String, Component>();
   
   Future resolveByName(String typeName, [List parameters]) {
-    Completer completer = new Completer();
-    Future<InstanceMirror> resolve = _resolveByName(typeName, parameters);
-    resolve.then((InstanceMirror mirror) => completer.complete(mirror.reflectee));
-    /*resolve.handleException( (exception) { 
-      print("exception $exception");
-      completer.completeException(exception);
-      return true;
-      });*/
-    return completer.future;
+    if(_components.containsKey(typeName)){
+      return _components[typeName].resolveUsing(this, parameters);
+    }
+    return doResolve(typeName, parameters);
   }
   
   void resolveByClosure(Function resolveCallback, [List parameters]) {
@@ -50,7 +45,15 @@ class Container {
     return _components.containsKey(typeName);
   }
   
-  Future<InstanceMirror> _resolveByName(String typeName, [List parameters]) {
+  /// this should be private, but I need to mock this in tests. need to find a better way of dealing with components
+  Future doResolve(String typeName, List parameters) {
+    Completer completer = new Completer();
+    Future<InstanceMirror> resolve = _resolveByName(typeName, parameters);
+    resolve.then((InstanceMirror mirror) => completer.complete(mirror.reflectee));
+    return completer.future;
+  }
+  
+  Future<InstanceMirror> _resolveByName(String typeName, [List parameters]) { 
     ClassMirror classMirror = _retrieveClassMirror(typeName);
     Completer<InstanceMirror> completer = new Completer<InstanceMirror>();
     MethodMirror constructor = _selectResolveableConstructor(classMirror, parameters);

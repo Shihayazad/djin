@@ -82,7 +82,7 @@ class Component<T> extends ComponentDefinition<T> {
       if(?parameters) {
         _dependencies.addAll(parameters);
       }      
-      resolvedInstance = container.resolveByName(typeToResolve, _dependencies);
+      resolvedInstance = container.doResolve(typeToResolve, _dependencies);
       _instanceHolder.instance = resolvedInstance;
       //print("return cached instance");
       //resolvedInstance = new Future.immediate(_instanceHolder.instance);
