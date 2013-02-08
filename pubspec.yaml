@@ -1,0 +1,7 @@
+name: djin
+version: 0.0.1
+author: Philipp Walser
+description: Inversion of Control-Container for Dart using the Mirrors-API
+homepage: https://github.com/Shihayazad/djin
+dependencies:
+  unittest: any
