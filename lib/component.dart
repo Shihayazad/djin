@@ -37,6 +37,7 @@ class Component<T> extends ComponentDefinition<T> {
   LifeStyle _lifeStyle;
   ComponentImplementation _implementation;
   InstanceHolder _instanceHolder;
+  List _dependencies = new List();
   
   LifeStyle get lifeStyle => _lifeStyle;
   
@@ -54,6 +55,10 @@ class Component<T> extends ComponentDefinition<T> {
   
   void implementedBy(ComponentImplementation impl) {
     _implementation = impl;
+  }
+  
+  void dependsOn(List parameters) {
+    _dependencies = parameters;
   }
   
   bool get hasInstance {
@@ -74,7 +79,10 @@ class Component<T> extends ComponentDefinition<T> {
       if(_implementation != null)  {
         typeToResolve = _implementation.typeName;
       }
-      resolvedInstance = container.resolveByName(typeToResolve, parameters);
+      if(?parameters) {
+        _dependencies.addAll(parameters);
+      }      
+      resolvedInstance = container.resolveByName(typeToResolve, _dependencies);
       _instanceHolder.instance = resolvedInstance;
       //print("return cached instance");
       //resolvedInstance = new Future.immediate(_instanceHolder.instance);

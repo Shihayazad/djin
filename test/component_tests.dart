@@ -11,6 +11,7 @@ void main() {
   test("shouldThrowErrorWhenSettingInstanceForTransientLifeStyle", throwErrorWhenSettingInstanceForTransientLifeStyle);
   test("shouldHaveTransientLifeStyle", useTransientLifeStyle);
   test("shouldResolveUsingContainer", resolveUsingContainer);
+  test("shouldResolveWithCustomDependencies", resolveWithCustomDependencies);
   test("shouldResolveRegisteredImplementation", resolveImplementation);
   test("shouldResolveSingleton", resolveSingleton);
   test("shouldResolveTransient", resolveTransient);
@@ -52,6 +53,11 @@ class TestContainer extends Mock implements Container {
     Behavior behavior = when(callsTo('resolveByName', instances[0].runtimeType.toString()));
     instances.forEach((instance) => behavior.thenReturn(new Future.immediate(instance)));
   }
+  
+  TestContainer.withDependencies(dependendObject, dependency) {
+    Behavior behavior = when(callsTo('resolveByName', dependendObject.runtimeType.toString(), [dependency]));
+    behavior.thenReturn(new Future.immediate(dependendObject));
+  }
 }
 
 void resolveUsingContainer() {
@@ -74,6 +80,26 @@ void resolveImplementation() {
   expect(sut.hasInstance, isFalse);
   sut.resolveUsing(container).then(expectAsync1((result) {
     expect(result, new isInstanceOf<TestClassImpl>());
+    expect(sut.hasInstance, isTrue);
+  }));
+}
+
+class Dependency {  
+}
+
+class ClassWithDependency {
+  final Dependency dependency;
+  ClassWithDependency(Dependency this.dependency);
+}
+
+void resolveWithCustomDependencies() {
+  Dependency dependency = new Dependency();
+  Container container = new TestContainer.withDependencies(new ClassWithDependency(dependency), dependency);
+  Component sut = new Component<ClassWithDependency>()..dependsOn([dependency]);
+  expect(sut.hasInstance, isFalse);
+  sut.resolveUsing(container).then(expectAsync1((result) {
+    expect(result, new isInstanceOf<ClassWithDependency>());
+    expect(result.dependency, same(dependency));
     expect(sut.hasInstance, isTrue);
   }));
 }
