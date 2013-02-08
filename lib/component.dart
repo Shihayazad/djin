@@ -33,10 +33,13 @@ abstract class ComponentDefinition<T> {
   }  
 }
 
+typedef Future<InstanceMirror> Resolver(ClassMirror classMirror, List parameters);
+
 class Component<T> extends ComponentDefinition<T> {  
   LifeStyle _lifeStyle;
   ComponentImplementation _implementation;
   InstanceHolder _instanceHolder;
+  ClassMirror _classMirror;
   List _dependencies = new List();
   
   LifeStyle get lifeStyle => _lifeStyle;
@@ -48,7 +51,6 @@ class Component<T> extends ComponentDefinition<T> {
       _lifeStyle = style;
     }
     _instanceHolder = _lifeStyle.createInstanceHolder();
-    
     //List<String> typeArguments = _retrieveTypeArguments();
     //typeArguments.forEach( (arg) => print(arg));
   }
@@ -70,32 +72,28 @@ class Component<T> extends ComponentDefinition<T> {
       throw new Error("You can not specify an instance for a component with transient lifestyle");
     }
     _instanceHolder.instance = new Future.immediate(instance);
-  }
-
-  Future resolveUsing(Container container, [List parameters]) {
-    Future resolvedInstance;
+  }  
+  
+  Future<InstanceMirror> resolveUsing(Resolver resolve, [List parameters]) {
+    Future<InstanceMirror> resolvedInstance;
     if(!_instanceHolder.hasInstance) {
-      String typeToResolve = typeName;
-      if(_implementation != null)  {
-        typeToResolve = _implementation.typeName;
+      if(_classMirror == null) {
+        var typeToResolve = typeName;
+        if(_implementation != null)  {
+          typeToResolve = _implementation.typeName;
+        }
+        _classMirror = _retrieveClassMirror(typeToResolve);
       }
-      if(?parameters) {
+      if(parameters != null) {
         _dependencies.addAll(parameters);
-      }      
-      resolvedInstance = container.doResolve(typeToResolve, _dependencies);
+      }   
+      resolvedInstance = resolve(_classMirror, _dependencies);
       _instanceHolder.instance = resolvedInstance;
-      //print("return cached instance");
-      //resolvedInstance = new Future.immediate(_instanceHolder.instance);
     } else {
       resolvedInstance = _instanceHolder.instance;
-     /* print("create new instance");
-      
-      resolvedInstance = 
-      resolvedInstance.then((instance) {
-        print("set instance");_instanceHolder.instance = instance;});*/
-    }
+    } 
     return resolvedInstance;
-  }  
+  }
   
   /**
    * ClassMirror.typeArguments is not implemented yet, so we need to implement a fallback

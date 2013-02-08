@@ -25,3 +25,19 @@ part 'component.dart';
 part 'component_implementation.dart';
 part 'instance_holder.dart';
 
+ClassMirror _retrieveClassMirror(String typeName) {
+  ClassMirror mirror = currentMirrorSystem().isolate.rootLibrary.classes[typeName];
+  if(mirror == null) {
+    currentMirrorSystem().libraries.values.forEach((lib) {
+      if (lib.classes.containsKey(typeName))
+      {
+        mirror = lib.classes[typeName];
+      }
+    });
+  }
+  if(mirror == null) {
+    throw new ArgumentError("typeName '$typeName' not found in any library known to this isolate");
+  }
+  return mirror;
+}
+

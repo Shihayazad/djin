@@ -14,6 +14,7 @@ void main() {
   test("useResolveableConstructor", shouldUseResolveableConstructor); 
   test("resolveByClosure", shouldResolveUsingClosure);
   test("shouldResolveFromImportedLib", resolveFromImportedLib);
+  test("shouldResolveRegisteredDependency", resolveRegisteredDependency);
 }
 
 void shouldThrowArgumentErrorIfGivenTypeIsNotKnownInOwnIsolate() {
@@ -129,6 +130,18 @@ void resolveFromImportedLib() {
   container.resolveByClosure((ClassFromOtherLib instance) => asyncCallbackWithDependency(instance));
 }
 
+void resolveRegisteredDependency() {
+  Container container = new Container();
+
+  container.register(new Component<ClassWithStringDependency>()..dependsOn(["bla"]));
+  
+  var asyncCallbackWithDependency = expectAsync1((ClassWithDependencyThatHasAStringDependency instance) {
+      expect(instance, new isInstanceOf<ClassWithDependencyThatHasAStringDependency>());     
+    });
+  
+  container.resolveByClosure((ClassWithDependencyThatHasAStringDependency instance) => asyncCallbackWithDependency(instance)); 
+}
+
 class ClassWithSimpleDependency<T> {
   final T simpleValue;
   
@@ -158,6 +171,10 @@ class ClassWithSeveralDependencies extends ClassWithSimpleDependency<String> {
   ClassWithSeveralDependencies(String dependency, num this.otherValue) : super(dependency);
   
   String toString() => "${super.toString()} ${otherValue.toString()}";
+}
+
+class ClassWithDependencyThatHasAStringDependency extends ClassWithSimpleDependency<ClassWithStringDependency>{
+  ClassWithDependencyThatHasAStringDependency(ClassWithStringDependency dependency) :super(dependency);
 }
 
 class Dependency {

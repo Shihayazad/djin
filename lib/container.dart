@@ -19,10 +19,10 @@ class Container {
   Map<String, Component> _components = new Map<String, Component>();
   
   Future resolveByName(String typeName, [List parameters]) {
-    if(_components.containsKey(typeName)){
-      return _components[typeName].resolveUsing(this, parameters);
-    }
-    return doResolve(typeName, parameters);
+    Completer completer = new Completer();
+    Future<InstanceMirror> resolve = _resolveByName(typeName, parameters);
+    resolve.then((InstanceMirror mirror) => completer.complete(mirror.reflectee));
+    return completer.future;
   }
   
   void resolveByClosure(Function resolveCallback, [List parameters]) {
@@ -34,7 +34,6 @@ class Container {
     funcmir.parameters.forEach( (ParameterMirror param) { 
         resolveByName(param.type.simpleName, parameters).then( (result) => resolveCallback(result));
         });
-    //mirror.type
   }
   
   void register(Component component) {
@@ -44,17 +43,15 @@ class Container {
   bool containsComponentFor(String typeName) {
     return _components.containsKey(typeName);
   }
-  
-  /// this should be private, but I need to mock this in tests. need to find a better way of dealing with components
-  Future doResolve(String typeName, List parameters) {
-    Completer completer = new Completer();
-    Future<InstanceMirror> resolve = _resolveByName(typeName, parameters);
-    resolve.then((InstanceMirror mirror) => completer.complete(mirror.reflectee));
-    return completer.future;
+   
+  Future<InstanceMirror> _resolveByName(String typeName, [List parameters]) { 
+    if(_components.containsKey(typeName)) {
+      return _components[typeName].resolveUsing(_resolveByClassMirror, parameters);
+    }
+    return _resolveByClassMirror(_retrieveClassMirror(typeName), parameters);
   }
   
-  Future<InstanceMirror> _resolveByName(String typeName, [List parameters]) { 
-    ClassMirror classMirror = _retrieveClassMirror(typeName);
+  Future<InstanceMirror> _resolveByClassMirror(ClassMirror classMirror, List parameters) {
     Completer<InstanceMirror> completer = new Completer<InstanceMirror>();
     MethodMirror constructor = _selectResolveableConstructor(classMirror, parameters);
     _resolveParameters(constructor, parameters).then((params) {
@@ -126,7 +123,7 @@ class Container {
                 && (requestedParamType != "num" || (paramType != "double" && paramType != "int"))) {
               errors.add(new NotResolveableError("Type mismatch in constructor ${methodMirror.simpleName} for parameter at position $i. Expected $requestedParamType but got $paramType"));
             }*/
-          } else {          
+          } else if (!_components.containsKey(requestedParamType)){  
             if (_isSimpleType(requestedParamType)) {
               errors.add(new NotResolveableError("Can not auto-resolve simple type $requestedParamType in constructor ${methodMirror.simpleName} for parameter at position $i"));
             } else if (_isDynamicType(requestedParamType)) {
@@ -150,22 +147,6 @@ class Container {
       throw new NotResolveableError.fromList(errors);
     }
     return resolveableConstructor;
-  }
-  
-  ClassMirror _retrieveClassMirror(String typeName) {
-    ClassMirror mirror = currentMirrorSystem().isolate.rootLibrary.classes[typeName];
-    if(mirror == null) {
-      currentMirrorSystem().libraries.values.forEach((lib) {
-        if (lib.classes.containsKey(typeName))
-        {
-          mirror = lib.classes[typeName];
-        }
-      });
-    }
-    if(mirror == null) {
-      throw new ArgumentError("typeName '$typeName' not found in any library known to this isolate");
-    }
-    return mirror;
   }
   
   bool _isSimpleType(String typeName) => (typeName == "num" 
