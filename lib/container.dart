@@ -22,6 +22,10 @@ class Container {
     return resolveBySymbol(new Symbol(typeName), parameters);
   }
   
+  Future resolveByType(Type typeName, [List parameters]) {
+    return resolveBySymbol(new Symbol(typeName.toString()), parameters);
+  }
+  
   Future resolveBySymbol(Symbol typeName, [List parameters]) {
     Completer completer = new Completer();
     Future<InstanceMirror> resolve = _resolveByName(typeName, parameters);

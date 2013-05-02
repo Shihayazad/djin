@@ -13,6 +13,7 @@ void main() {
   test("resolveConcreteDependency", shouldResolveConcreteDependency);
   test("useResolveableConstructor", shouldUseResolveableConstructor); 
   test("resolveByClosure", shouldResolveUsingClosure);
+  test("resolveByType", shouldResolveByType);
   test("shouldResolveFromImportedLib", resolveFromImportedLib);
   test("shouldResolveRegisteredDependency", resolveRegisteredDependency);
 }
@@ -119,6 +120,12 @@ void shouldResolveUsingClosure() {
     });
   
   container.resolveByClosure((ClassWithDependency instance) => asyncCallbackWithDependency(instance), [dependency]);
+}
+
+void shouldResolveByType() {
+  Container container = new Container();
+  var asyncCallback = expectAsync1((Dependency instance) => expect(instance, new isInstanceOf<Dependency>()));
+  container.resolveByType(Dependency).then((instance) => asyncCallback(instance));
 }
 
 void resolveFromImportedLib() {

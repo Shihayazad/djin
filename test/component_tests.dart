@@ -1,5 +1,8 @@
-import 'package:unittest/unittest.dart';
+import 'dart:mirrors';
 import 'dart:async';
+
+import 'package:unittest/unittest.dart';
+
 import '../lib/djin.dart';
 
 void main() {
@@ -48,7 +51,7 @@ void throwErrorWhenSettingInstanceForTransientLifeStyle() {
 
 void resolveUsingContainer() {
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, equals(new Symbol("TestClass")));
+    expect(MirrorSystem.getName(classMirror.simpleName), same("TestClass"));
     return new Future.value(null);
   };
   Component sut = new Component<TestClass>();
@@ -63,7 +66,7 @@ class TestClassImpl extends TestClass {
 
 void resolveImplementation() {
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, equals(new Symbol("TestClassImpl")));
+    expect(MirrorSystem.getName(classMirror.simpleName), same("TestClassImpl"));
     return new Future.value(null);
   };
   Component sut = new Component<TestClass>()..implementedBy(new ComponentImplementation<TestClassImpl>());
@@ -84,7 +87,7 @@ void resolveWithCustomDependencies() {
   Dependency dependency = new Dependency();
   
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, equals(new Symbol("ClassWithDependency")));
+    expect(MirrorSystem.getName(classMirror.simpleName), same("ClassWithDependency"));
     expect(params[0], same(dependency));
     return new Future.value(null);
   };
@@ -100,7 +103,7 @@ void resolveSingleton() {
   var singletonInstance;
   
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, equals(new Symbol("TestClass")));
+    expect(MirrorSystem.getName(classMirror.simpleName), same("TestClass"));
     return new Future.value(new TestClass());
   };
   
@@ -118,7 +121,7 @@ void resolveTransient() {
   var transientInstance = null;
   
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, equals(new Symbol("TestClass")));
+    expect(MirrorSystem.getName(classMirror.simpleName), same("TestClass"));
     return new Future.value(new TestClass());
   };
   
