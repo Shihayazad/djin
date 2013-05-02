@@ -16,9 +16,13 @@
 part of djin;
 
 class Container {
-  Map<String, Component> _components = new Map<String, Component>();
+  Map<Symbol, Component> _components = new Map<Symbol, Component>();
   
   Future resolveByName(String typeName, [List parameters]) {
+    return resolveBySymbol(new Symbol(typeName), parameters);
+  }
+  
+  Future resolveBySymbol(Symbol typeName, [List parameters]) {
     Completer completer = new Completer();
     Future<InstanceMirror> resolve = _resolveByName(typeName, parameters);
     resolve.then((InstanceMirror mirror) => completer.complete(mirror.reflectee));
@@ -32,7 +36,7 @@ class Container {
       throw new ArgumentError("closure must have only one param so that the type to be resolved can be determined");
     }    
     funcmir.parameters.forEach( (ParameterMirror param) { 
-        resolveByName(param.type.simpleName, parameters).then( (result) => resolveCallback(result));
+        resolveBySymbol(param.type.simpleName, parameters).then( (result) => resolveCallback(result));
         });
   }
   
@@ -41,10 +45,10 @@ class Container {
   }
   
   bool containsComponentFor(String typeName) {
-    return _components.containsKey(typeName);
+    return _components.containsKey(new Symbol(typeName));
   }
    
-  Future<InstanceMirror> _resolveByName(String typeName, [List parameters]) { 
+  Future<InstanceMirror> _resolveByName(Symbol typeName, [List parameters]) { 
     if(_components.containsKey(typeName)) {
       return _components[typeName].resolveUsing(_resolveByClassMirror, parameters);
     }
@@ -56,15 +60,9 @@ class Container {
     MethodMirror constructor = _selectResolveableConstructor(classMirror, parameters);
     _resolveParameters(constructor, parameters).then((params) {
       print("Instantiate Type ${constructor.simpleName} with params $params");
-      Future<InstanceMirror> newInstance = classMirror.newInstance(constructor.constructorName, params);
-      newInstance.then((InstanceMirror newIM) {
-        //if (!completer.future.isComplete) {
-          completer.complete(newIM);
-       // }
-      }).catchError( (error) => print("exception error $error") );
-      /*newInstance.handleException( (exception) {
-        print("exception $exception"); 
-        completer.completeException(exception);});*/
+      Future<InstanceMirror> newInstance = classMirror.newInstanceAsync(constructor.constructorName, params);
+      newInstance.then((InstanceMirror newIM) => completer.complete(newIM))
+                 .catchError( (error) => print("exception error $error") );
     });
     return completer.future;
   }
@@ -73,8 +71,11 @@ class Container {
     if (parameters == null) {
       parameters = new List();
     }
+    // the mirror api needs non-simple parameters to be mirrors, too
+    // therefore we create those mirrors here if needed 
+    // and replace the parameters with them
     for (int i = 0; i < parameters.length; ++i) {
-      if (!_isSimpleType(parameters[i].runtimeType.toString())) {
+      if (!_isSimpleType(new Symbol(parameters[i].runtimeType.toString()))) {
         parameters[i] = reflect(parameters[i]);
       }
     }    
@@ -84,12 +85,7 @@ class Container {
     var resolvedParams = new List<Future>();
     if (methodParams.length > parameters.length) {
       for (int i = parameters.length; i < methodParams.length; ++i) {
-          String parameterTypeName = methodParams[i].type.simpleName;
-          /*if (_isSimpleType(parameterTypeName)) {
-            throw new NotResolveableError("Can not auto-resolve simple type in constructor ${methodMirror.simpleName} for parameter at position $i");
-          } else if (_isDynamicType(parameterTypeName)) {
-            throw new NotResolveableError("Can not auto-resolve Dynamic type in constructor ${methodMirror.simpleName} for parameter at position $i");
-          }*/
+          Symbol parameterTypeName = methodParams[i].type.simpleName;
           resolvedParams.add(_resolveByName(parameterTypeName));
       }
     }
@@ -108,14 +104,13 @@ class Container {
   MethodMirror _selectResolveableConstructor(ClassMirror classMirror, [List parameters]) {
     MethodMirror resolveableConstructor;
     List<NotResolveableError> errors = new List<NotResolveableError>();
-    //print("Find resolveable constructor for $classMirror");
     classMirror.constructors.values.forEach( (MethodMirror methodMirror) {
       if (methodMirror.parameters.isEmpty) {
         resolveableConstructor = methodMirror;
       } else if (resolveableConstructor == null) {
         List<ParameterMirror> constructorParams = methodMirror.parameters;
         for (int i = 0; i < constructorParams.length; ++i) {
-          String requestedParamType = constructorParams[i].type.simpleName;
+          Symbol requestedParamType = constructorParams[i].type.simpleName;
           if (parameters != null && parameters.length > i) {
             /*String paramType = parameters[i].runtimeType.toString();
             if(requestedParamType != paramType 
@@ -149,11 +144,12 @@ class Container {
     return resolveableConstructor;
   }
   
-  bool _isSimpleType(String typeName) => (typeName == "num" 
-                                            || typeName == "int"
-                                            || typeName == "double"
-                                            || typeName == "String" 
-                                            || typeName == "bool");
   
-  bool _isDynamicType(String typeName) => (typeName == "Dynamic");
+  bool _isSimpleType(Symbol typeName) => (typeName == new Symbol("num")
+                                            || typeName == new Symbol("int")
+                                            || typeName == new Symbol("double")
+                                            || typeName == new Symbol("String") 
+                                            || typeName == new Symbol("bool"));
+  
+  bool _isDynamicType(Symbol typeName) => (typeName == new Symbol("Dynamic"));
 }

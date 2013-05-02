@@ -25,7 +25,7 @@ part 'component.dart';
 part 'component_implementation.dart';
 part 'instance_holder.dart';
 
-ClassMirror _retrieveClassMirror(String typeName) {
+ClassMirror _retrieveClassMirror(Symbol typeName) {
   ClassMirror mirror = currentMirrorSystem().isolate.rootLibrary.classes[typeName];
   if(mirror == null) {
     currentMirrorSystem().libraries.values.forEach((lib) {

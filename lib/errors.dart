@@ -24,7 +24,7 @@ class NotResolveableError extends Error {
   
   NotResolveableError.fromList(List<NotResolveableError> errors) {
     StringBuffer buffer = new StringBuffer();
-    errors.forEach( (error) => buffer.add("${error.message}\n"));
+    errors.forEach( (error) => buffer.write("${error.message}\n"));
     _message = buffer.toString();
   }
 
@@ -34,4 +34,12 @@ class NotResolveableError extends Error {
     }
     return "Resolving not possible";
   }
+}
+
+class ComponentConfigurationError extends Error{
+  final String message;
+  
+  ComponentConfigurationError(this.message);
+  
+  String toString() => message;
 }

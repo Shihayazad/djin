@@ -9,7 +9,7 @@ void main() {
   test("argumentErrorTest", shouldThrowArgumentErrorIfGivenTypeIsNotKnownInOwnIsolate);
   test("doNotAutoResolveSimpleOrDyanmicTypes", shouldThrowNotResolveableErrorIfDependenciesToAutoResolveAreSimpleOrDynamicTypes);
   test("resolveWithParametersGiven", shouldResolveIfSimpleOrDyanmicDependenciesAreGiven);
-  //test("paramsInWrongOrder", shouldThrowFutureUnhandledExceptionIfParametersArePassedInTheWrongOrder);
+  ///test("paramsInWrongOrder", shouldThrowFutureUnhandledExceptionIfParametersArePassedInTheWrongOrder);
   test("resolveConcreteDependency", shouldResolveConcreteDependency);
   test("useResolveableConstructor", shouldUseResolveableConstructor); 
   test("resolveByClosure", shouldResolveUsingClosure);
@@ -28,6 +28,7 @@ void shouldThrowArgumentErrorIfGivenTypeIsNotKnownInOwnIsolate() {
 void shouldThrowNotResolveableErrorIfDependenciesToAutoResolveAreSimpleOrDynamicTypes() {
   print("doNotAutoResolveSimpleOrDyanmicTypes");
   Container container = new Container();
+
   expect( () => container.resolveByName("ClassWithStringDependency"), throwsA(new isInstanceOf<NotResolveableError>()));
   expect( () => container.resolveByName("ClassWithNumDependency"), throwsA(new isInstanceOf<NotResolveableError>()));
   expect( () => container.resolveByName("ClassWithBoolDependency"), throwsA(new isInstanceOf<NotResolveableError>()));

@@ -17,16 +17,17 @@ part of djin;
 
 abstract class InstanceHolder {
   bool hasInstance;
-  Future instance;
+  Future<InstanceMirror> instance;
 }
 
 class SingletonHolder implements InstanceHolder {
-  Future _instance;
+  Future<InstanceMirror> _instance;
+  Future<InstanceMirror> get instance => _instance;
   
   bool get hasInstance => _instance != null;
   
-  Future get instance => _instance;
-  void set instance(Future value) {
+  
+  void set instance(Future<InstanceMirror> value) {
     if(_instance != null) {
       throw new ArgumentError("instance already set");
     }
@@ -37,7 +38,7 @@ class SingletonHolder implements InstanceHolder {
 class TransientHolder implements InstanceHolder {
   bool get hasInstance => false;
   
-  Future get instance => null;
-  void set instance(Future value) {
+  Future<InstanceMirror> get instance => null;
+  void set instance(Future<InstanceMirror> value) {
   }
 }

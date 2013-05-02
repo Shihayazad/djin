@@ -18,18 +18,18 @@ part of djin;
 abstract class ComponentDefinition<T> {
   static final RegExp _regexp = new RegExp(r'\b(?!(?:Component))\w+');
   
-  String _typeName;
+  Symbol _typeName;
   
-  String get typeName => _typeName;
+  Symbol get typeName => _typeName;
   
   ComponentDefinition() {
     _typeName = _retrieveTypeName();
   }
   
-  String _retrieveTypeName() {
+  Symbol _retrieveTypeName() {
     Iterator<Match> iterator = _regexp.allMatches(this.runtimeType.toString()).iterator;
     iterator.moveNext();
-    return iterator.current.group(0);
+    return new Symbol(iterator.current.group(0));
   }  
 }
 
@@ -60,7 +60,7 @@ class Component<T> extends ComponentDefinition<T> {
   }
   
   void dependsOn(List parameters) {
-    _dependencies = parameters;
+    _dependencies.addAll(parameters);
   }
   
   bool get hasInstance {
@@ -69,9 +69,9 @@ class Component<T> extends ComponentDefinition<T> {
   
   void instance(T instance) {
     if(_lifeStyle == LifeStyle.Transient) {
-      throw new Error("You can not specify an instance for a component with transient lifestyle");
+      throw new ComponentConfigurationError("You can not specify an instance for a component with transient lifestyle");
     }
-    _instanceHolder.instance = new Future.immediate(instance);
+    _instanceHolder.instance = new Future.value(instance);
   }  
   
   Future<InstanceMirror> resolveUsing(Resolver resolve, [List parameters]) {
@@ -110,6 +110,5 @@ class Component<T> extends ComponentDefinition<T> {
     }
     return typeArguments;
   }  
- 
 }
 

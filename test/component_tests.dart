@@ -1,5 +1,4 @@
 import 'package:unittest/unittest.dart';
-import "package:unittest/mock.dart";
 import 'dart:async';
 import '../lib/djin.dart';
 
@@ -49,8 +48,8 @@ void throwErrorWhenSettingInstanceForTransientLifeStyle() {
 
 void resolveUsingContainer() {
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, same("TestClass"));
-    return new Future.immediate(null);
+    expect(classMirror.simpleName, equals(new Symbol("TestClass")));
+    return new Future.value(null);
   };
   Component sut = new Component<TestClass>();
   expect(sut.hasInstance, isFalse);
@@ -64,8 +63,8 @@ class TestClassImpl extends TestClass {
 
 void resolveImplementation() {
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, same("TestClassImpl"));
-    return new Future.immediate(null);
+    expect(classMirror.simpleName, equals(new Symbol("TestClassImpl")));
+    return new Future.value(null);
   };
   Component sut = new Component<TestClass>()..implementedBy(new ComponentImplementation<TestClassImpl>());
   expect(sut.hasInstance, isFalse);
@@ -85,9 +84,9 @@ void resolveWithCustomDependencies() {
   Dependency dependency = new Dependency();
   
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, same("ClassWithDependency"));
+    expect(classMirror.simpleName, equals(new Symbol("ClassWithDependency")));
     expect(params[0], same(dependency));
-    return new Future.immediate(null);
+    return new Future.value(null);
   };
 
   Component sut = new Component<ClassWithDependency>()..dependsOn([dependency]);
@@ -101,8 +100,8 @@ void resolveSingleton() {
   var singletonInstance;
   
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, same("TestClass"));
-    return new Future.immediate(new TestClass());
+    expect(classMirror.simpleName, equals(new Symbol("TestClass")));
+    return new Future.value(new TestClass());
   };
   
   sut.resolveUsing(resolveDelegate).then(expectAsync1((result) {
@@ -119,8 +118,8 @@ void resolveTransient() {
   var transientInstance = null;
   
   var resolveDelegate = (classMirror, params) {
-    expect(classMirror.simpleName, same("TestClass"));
-    return new Future.immediate(new TestClass());
+    expect(classMirror.simpleName, equals(new Symbol("TestClass")));
+    return new Future.value(new TestClass());
   };
   
   sut.resolveUsing(resolveDelegate).then(expectAsync1((result) {
